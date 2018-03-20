@@ -45,10 +45,117 @@
                 $url = "http://data.alexa.com/data?cli=10&dat=snbamz&url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']);
                 $insight_url = "https://www.googleapis.com/pagespeedonline/v4/runPagespeed?url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']) . "&strategy=" . $_POST['strategy'] . "&key=".$api_key;
                 $xmlstr = simplexml_load_file($url);
-                $rank=isset($xml->SD[1]->POPULARITY)?$xml->SD[1]->POPULARITY->attributes()->TEXT:0;
                 $content_insights = file_get_contents($insight_url);
                 $array_insights = json_decode($content_insights, true);
                 ?>
+            <div class="row">
+                <div class="col-sm-7 col-sm-offset-2">
+                    <h3>
+                        <br/><br/>
+                        Results for <?= $array_insights['title'] ?>
+                    </h3>
+
+                    <hr/>
+
+                    <table class="table table-bordered" cellspacing="0" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>URL</th>
+                            <th>Home</th>
+                            <th>AID</th>
+                            <th>IDN</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr>
+                            <?php
+                            foreach($xmlstr->attributes() as $a => $b):
+                                ?>
+                                <td><?= $b ?></td>
+                            <?php
+                            endforeach;
+                            ?>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-bordered" cellspacing="0" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Owner</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr>
+                            <?php
+                            foreach($xmlstr->children()[1] as $child):
+                                foreach($child->attributes() as $key => $value ):
+                                    ?>
+                                    <td><?= $value ?></td>
+                                <?php
+                                endforeach;
+                            endforeach;
+
+                            ?>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-bordered" cellspacing="0" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Rankings</th>
+                            <th>Source</th>
+                            <th>Reach Rank</th>
+                            <th>Rank Delta</th>
+                            <th>Country Code</th>
+                            <th>Country Name</th>
+                            <th>Country Rank</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr>
+                            <?php
+                            echo $xmlstr->children()[2][0]->attributes[0];
+                            if(isset($xmlstr)):
+                                foreach($xmlstr->children()[2] as $child):
+                                    foreach($child->attributes() as $key => $value ):
+                                        ?>
+                                        <td><?= $value ?></td>
+                                    <?php
+                                    endforeach;
+                                endforeach;
+                            endif;
+                            ?>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <hr/>
+
+                    <div class="row">
+                        <div class="col-sm-7 col-sm-offset-2">
+                            <h3>
+                                <b>Optimisation:</b>
+
+
+                            </h3>
+                            <p class="lead">Score: <?=$array_insights['ruleGroups']['SPEED']['score'] ?>/100</p>
+                            <p class="lead">Guidelines:</p>
+                            <p id="optimisation"></p>
+                            <div style="display: none" id="alert" class="alert alert-success"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
 
             <?php
                 endif;
@@ -129,16 +236,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js" integrity="sha256-JG6hsuMjFnQ2spWq0UiaDRJBaarzhFbUxiUTxQDA9Lk=" crossorigin="anonymous"></script>
 <script>
-var alexa_rank = <?= $rank?>;
-var google_page_insight_rank = <?=$array_insights['ruleGroups']['SPEED']['score'] ? $array_insights['ruleGroups']['SPEED']['score'] : 0?>;
 var ctx = document.getElementById("myChart").getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ["Alexa Ranking", "Google Optimisation Score out of 100", "Yellow", "Green", "Purple", "Orange"],
+        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
         datasets: [{
-            label: 'SEO statistics',
-            data: [ alexa_rank, google_page_insight_rank, 3, 5, 2, 3],
+            label: '# of Votes',
+            data: [12, <?= $xmlstr->children()[2]->POPULARITY->attributes()['TEXT'] ?>, 3, 5, 2, 3],
             backgroundColor: [
                 'rgba(255, 99, 132, 0.2)',
                 'rgba(54, 162, 235, 0.2)',
