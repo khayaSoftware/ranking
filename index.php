@@ -3,9 +3,12 @@
 
     <head>
         <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Maven+Pro" />
+        <link type="text/css" rel="stylesheet" href="/assets/css/style.css"/>
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.bundle.min.js" integrity="sha384-feJI7QwhOS+hwpX2zkaeJQjeiwlhOP+SdQDqhgvvo1DsjtiSQByFdThsxO669S2D" crossorigin="anonymous"></script>
+        <script src="/assets/js/chart.js"></script>
+        <script src="/assets/js/utils.js"></script>
     </head>
 
     <body>
@@ -45,227 +48,112 @@
                 $url = "http://data.alexa.com/data?cli=10&dat=snbamz&url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']);
                 $insight_url = "https://www.googleapis.com/pagespeedonline/v4/runPagespeed?url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']) . "&strategy=" . $_POST['strategy'] . "&key=".$api_key;
                 $xmlstr = simplexml_load_file($url);
-                $rank=isset($xml->SD[1]->POPULARITY)?$xml->SD[1]->POPULARITY->attributes()->TEXT:0;
+                $rank=isset($xmlstr->SD[1]->POPULARITY)?$xmlstr->SD[1]->POPULARITY->attributes()->TEXT:0;
                 $content_insights = file_get_contents($insight_url);
                 $array_insights = json_decode($content_insights, true);
+                
                 ?>
 
             <?php
                 endif;
              ?>
+
+             <?php
+                $object_url = "https://www.facebook.com/54971236771/"; // or by id
+            
+                $ch = curl_init("https://www.facebook.com/v2.5/plugins/like.php?locale=en_US&href=".$object_url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'Chrome');
+                $html = curl_exec($ch);
+            
+                preg_match("/and ([0-9,.]+?) others/", $html, $match);
+                $likes = floatval(str_replace(array(',','.'), '', $match[1]));
+            
+                echo $likes . "<br/><br/>";
+
+                echo $rank  . "<br/><br/>";
+
+                $otherPage = 'google';
+                $response = file_get_contents("https://www.instagram.com/$otherPage/?__a=1");
+                if ($response !== false) {
+                    $data = json_decode($response, true);
+                    if ($data !== null) {
+                        $followedBy = $data['graphql']['user']['edge_followed_by']['count'];
+                        echo $followedBy;
+                    }
+                }
+            ?>
         </div>
     </div>
 
     <div class="section">
         <div class="container">
             <div class="row">
-                <canvas id="myChart"></canvas>
+                <canvas id="chart-area"></canvas>
             </div>
         </div>
     </div>
 
-    <style>
-        h1 {
-            font-family: "Maven Pro";
-            font-size: 24px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 500;
-            line-height: 26.4px;
-        }
-        h3 {
-            font-family: "Maven Pro";
-            font-size: 14px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 500;
-            line-height: 15.4px;
-        }
-        p {
-            font-family: "Maven Pro";
-            font-size: 14px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 400;
-            line-height: 20px;
-        }
-        blockquote {
-            font-family: "Maven Pro";
-            font-size: 21px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 400;
-            line-height: 30px;
-        }
-        pre {
-            font-family: "Maven Pro";
-            font-size: 13px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 400;
-            line-height: 18.5714px;
-        }
-        *{
-            font-family: "Maven Pro",Arial,sans-serif !important;
-        }
-        .form-control {
-            border: none !important;
-            border-bottom: 1px solid #ced4da !important;
-            border-radius: 0rem;
-        }
-        .form-control:focus {
-            border-color: #fff !important;
-        }
-
-        select {
-            border: none !important;
-            border-bottom: 1px solid #ced4da !important;
-        }
-
-        button{
-            border-radius: 0px !important;
-        }
-    </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js" integrity="sha256-JG6hsuMjFnQ2spWq0UiaDRJBaarzhFbUxiUTxQDA9Lk=" crossorigin="anonymous"></script>
-<script>
-var alexa_rank = <?= $rank?>;
-var google_page_insight_rank = <?=$array_insights['ruleGroups']['SPEED']['score'] ? $array_insights['ruleGroups']['SPEED']['score'] : 0?>;
-var ctx = document.getElementById("myChart").getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ["Alexa Ranking", "Google Optimisation Score out of 100", "Yellow", "Green", "Purple", "Orange"],
-        datasets: [{
-            label: 'SEO statistics',
-            data: [ alexa_rank, google_page_insight_rank, 3, 5, 2, 3],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero:true
-                }
-            }]
-        }
-    }
-});
-</script>
-
     <script>
-        // Specify your actual API key here:
-        var API_KEY = 'AIzaSyBlL2LAkKph5z4X6azb99kWIMyFvFYiAsY';
+        var alexa_rank = <?= $rank ?>;
+        var google_page_insight_rank = <?=$array_insights['ruleGroups']['SPEED']['score'] ? $array_insights['ruleGroups']['SPEED']['score'] : 0?>;
+        var social_media_audience = <?=$likes + $followedBy ? $likes + $followedBy : 0?>;
+		var chartColors = window.chartColors;
+		var color = Chart.helpers.color;
+		var config = {
+			data: {
+				datasets: [{
+					data: [
+						alexa_rank,
+						google_page_insight_rank,
+                        social_media_audience
+					],
+					backgroundColor: [
+						color(chartColors.red).alpha(0.5).rgbString(),
+						color(chartColors.orange).alpha(0.5).rgbString(),
+						color(chartColors.yellow).alpha(0.5).rgbString(),
+						color(chartColors.green).alpha(0.5).rgbString(),
+						color(chartColors.blue).alpha(0.5).rgbString(),
+					],
+					label: 'My dataset' // for legend
+				}],
+				labels: [
+					'Alexa Ranking',
+					'Google Page Insight Rank (/100)',
+                    'Social Media Audience'
+				]
+			},
+			options: {
+				responsive: true,
+				legend: {
+					position: 'right',
+				},
+				title: {
+					display: true,
+					text: 'Chart.js Polar Area Chart'
+				},
+				scale: {
+					ticks: {
+						beginAtZero: true
+					},
+					reverse: false
+				},
+				animation: {
+					animateRotate: false,
+					animateScale: true
+				}
+			}
+		};
 
-        // Specify the URL you want PageSpeed results for here:
-        var URL_TO_GET_RESULTS_FOR = "<?= $site_url; ?>";
+		window.onload = function() {
+			var ctx = document.getElementById('chart-area');
+			window.myPolarArea = Chart.PolarArea(ctx, config);
+		};
 
-        var API_URL = 'https://www.googleapis.com/pagespeedonline/v4/runPagespeed?';
-        var CHART_API_URL = 'http://chart.apis.google.com/chart?';
+	</script>
 
-        // Object that will hold the callbacks that process results from the
-        // PageSpeed Insights API.
-        var callbacks = {}
-
-        // Invokes the PageSpeed Insights API. The response will contain
-        // JavaScript that invokes our callback with the PageSpeed results.
-        function runPagespeed() {
-            var s = document.createElement('script');
-            s.type = 'text/javascript';
-            s.async = true;
-            var query = [
-                'url=' + URL_TO_GET_RESULTS_FOR,
-                'callback=runPagespeedCallbacks',
-                'key=' + API_KEY,
-            ].join('&');
-            s.src = API_URL + query;
-            console.log(s.src);
-            document.head.insertBefore(s, null);
-        }
-
-        // Our JSONP callback. Checks for errors, then invokes our callback handlers.
-        function runPagespeedCallbacks(result) {
-            if (result.error) {
-                var errors = result.error.errors;
-                for (var i = 0, len = errors.length; i < len; ++i) {
-                    if (errors[i].reason == 'badRequest' && API_KEY == 'yourAPIKey') {
-                        alert('Please specify your Google API key in the API_KEY variable.');
-                    } else {
-                        // NOTE: your real production app should use a better
-                        // mechanism than alert() to communicate the error to the user.
-                        alert(errors[i].message);
-                    }
-                }
-                return;
-            }
-
-            // Dispatch to each function on the callbacks object.
-            for (var fn in callbacks) {
-                var f = callbacks[fn];
-                if (typeof f == 'function') {
-                    callbacks[fn](result);
-                }
-            }
-        }
-
-        // Invoke the callback that fetches results. Async here so we're sure
-        // to discover any callbacks registered below, but this can be
-        // synchronous in your code.
-        setTimeout(runPagespeed, 0);
-
-        callbacks.displayTopPageSpeedSuggestions = function(result) {
-            var optimisation = document.getElementById("optimisation");
-            var alert = document.getElementById("alert");
-            var results = [];
-            var ruleResults = result.formattedResults.ruleResults;
-            for (var i in ruleResults) {
-                var ruleResult = ruleResults[i];
-                // Don't display lower-impact suggestions.
-
-                if (ruleResult.ruleImpact < 3.0) continue;
-                results.push({name: ruleResult.localizedRuleName,
-                    impact: ruleResult.ruleImpact});
-            }
-            results.sort(sortByImpact);
-            var ul = document.createElement('ul');
-            for (var i = 0, len = results.length; i < len; ++i) {
-                var r = document.createElement('li');
-                r.innerHTML = results[i].name;
-                //ul.insertBefore(r, optimisation);
-                optimisation.appendChild(r);
-            }
-            if (ul.hasChildNodes()) {
-                //document.body.insertBefore(ul, optimisation);
-                optimisation.appendChild(ul);
-            } else {
-                var div = document.createElement('div');
-                div.innerHTML = 'No high impact suggestions. Good job!';
-                //document.body.insertBefore(div, optimisation);
-                alert.style.setProperty("display","block","");
-                alert.appendChild(div);
-            }
-        };
-
-        // Helper function that sorts results in order of impact.
-        function sortByImpact(a, b) { return b.impact - a.impact; }
-    </script>
 
 
     </body>
