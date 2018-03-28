@@ -40,26 +40,54 @@
 
                 </div>
             </div>
-            <?php
-            if(isset($_POST['site_url'])&&isset($_POST['strategy'])):
-                $api_key = "AIzaSyBlL2LAkKph5z4X6azb99kWIMyFvFYiAsY";
-                $site_url = str_replace("%3A%2F%2F","://",$_POST['site_url']);
-                $strategy = $_POST['strategy'];
-                $url = "http://data.alexa.com/data?cli=10&dat=snbamz&url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']);
-                $insight_url = "https://www.googleapis.com/pagespeedonline/v4/runPagespeed?url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']) . "&strategy=" . $_POST['strategy'] . "&key=".$api_key;
-                $xmlstr = simplexml_load_file($url);
-                $rank=isset($xmlstr->SD[1]->POPULARITY)?$xmlstr->SD[1]->POPULARITY->attributes()->TEXT:0;
-                $content_insights = file_get_contents($insight_url);
-                $array_insights = json_decode($content_insights, true);
-                
-                ?>
-
-            <?php
-                endif;
-             ?>
+           
 
              <?php
-                $object_url = "https://www.facebook.com/54971236771/"; // or by id
+                
+            ?>
+        </div>
+    </div>
+    
+    <script>
+        var alexa_rank = <?= $rank ?>;
+        var google_page_insight_rank = <?=$array_insights['ruleGroups']['SPEED']['score'] ? $array_insights['ruleGroups']['SPEED']['score'] : 0?>;
+        var social_media_audience = <?=$likes + $followedBy ? $likes + $followedBy : 0?>;
+		
+        $.ajax({ 
+            url: 'index.php',
+            data: {function2call: 'getEmployeesList', otherkey:otherdata},
+            type: 'post',
+            success: function(output) {
+                        alert(output);
+                    }
+            });
+
+	</script>
+
+    <?php 
+    
+        if(isset($_POST['getranks']) && !empty($_POST['getranks'])) {
+            $function2call = $_POST['getranks'];
+            switch($function2call) {
+                case 'allofthem' : dostuff();break;
+                case 'other' : // do something;break;
+                // other cases
+            }
+        }
+
+        public function dostuff(){
+
+            $api_key = "AIzaSyBlL2LAkKph5z4X6azb99kWIMyFvFYiAsY";
+            $site_url = str_replace("%3A%2F%2F","://",$_POST['site_url']);
+            $strategy = $_POST['strategy'];
+            $url = "http://data.alexa.com/data?cli=10&dat=snbamz&url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']);
+            $insight_url = "https://www.googleapis.com/pagespeedonline/v4/runPagespeed?url=" . str_replace("%3A%2F%2F","://",$_POST['site_url']) . "&strategy=" . $_POST['strategy'] . "&key=".$api_key;
+            $xmlstr = simplexml_load_file($url);
+            $rank=isset($xmlstr->SD[1]->POPULARITY)?$xmlstr->SD[1]->POPULARITY->attributes()->TEXT:0;
+            $content_insights = file_get_contents($insight_url);
+            $array_insights = json_decode($content_insights, true);
+
+            $object_url = "https://www.facebook.com/54971236771/"; // or by id
             
                 $ch = curl_init("https://www.facebook.com/v2.5/plugins/like.php?locale=en_US&href=".$object_url);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -82,77 +110,9 @@
                         echo $followedBy;
                     }
                 }
-            ?>
-        </div>
-    </div>
+        }
 
-    <div class="section">
-        <div class="container">
-            <div class="row">
-                <canvas id="chart-area"></canvas>
-            </div>
-        </div>
-    </div>
-
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js" integrity="sha256-JG6hsuMjFnQ2spWq0UiaDRJBaarzhFbUxiUTxQDA9Lk=" crossorigin="anonymous"></script>
-    <script>
-        var alexa_rank = <?= $rank ?>;
-        var google_page_insight_rank = <?=$array_insights['ruleGroups']['SPEED']['score'] ? $array_insights['ruleGroups']['SPEED']['score'] : 0?>;
-        var social_media_audience = <?=$likes + $followedBy ? $likes + $followedBy : 0?>;
-		var chartColors = window.chartColors;
-		var color = Chart.helpers.color;
-		var config = {
-			data: {
-				datasets: [{
-					data: [
-						alexa_rank,
-						google_page_insight_rank,
-                        social_media_audience
-					],
-					backgroundColor: [
-						color(chartColors.red).alpha(0.5).rgbString(),
-						color(chartColors.orange).alpha(0.5).rgbString(),
-						color(chartColors.yellow).alpha(0.5).rgbString(),
-						color(chartColors.green).alpha(0.5).rgbString(),
-						color(chartColors.blue).alpha(0.5).rgbString(),
-					],
-					label: 'My dataset' // for legend
-				}],
-				labels: [
-					'Alexa Ranking',
-					'Google Page Insight Rank (/100)',
-                    'Social Media Audience'
-				]
-			},
-			options: {
-				responsive: true,
-				legend: {
-					position: 'right',
-				},
-				title: {
-					display: true,
-					text: 'Chart.js Polar Area Chart'
-				},
-				scale: {
-					ticks: {
-						beginAtZero: true
-					},
-					reverse: false
-				},
-				animation: {
-					animateRotate: false,
-					animateScale: true
-				}
-			}
-		};
-
-		window.onload = function() {
-			var ctx = document.getElementById('chart-area');
-			window.myPolarArea = Chart.PolarArea(ctx, config);
-		};
-
-	</script>
+    ?>
 
 
 
